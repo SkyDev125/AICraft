@@ -73,15 +73,21 @@ async function createBot() {
 
     const response = await getGeminiResponse(message);
 
-    if (response.startsWith('!')) {
-      const args = response.slice(1).split(' ');
+    // Split the response into multiple commands if they exist
+    const commandsList = response.split('!');
+
+    for (let i = 1; i < commandsList.length; i++) {
+      const cmd = commandsList[i].trim();
+      const args = cmd.split(' ');
       const command = args.shift();
       if (commands[command]) {
-        commands[command].execute(bot, args);
+        const expectedArgs = commands[command].args.length;
+        const commandArgs = args.slice(0, expectedArgs);
+        await commands[command].execute(bot, commandArgs);
+        console.log(`${name}: !${command} ${commandArgs.join(' ') || ''}`);
       }
     }
 
-    console.log(`${name}: ${response}`);
     bot.chat(response);
   });
 }
