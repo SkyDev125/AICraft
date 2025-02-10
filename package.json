@@ -1,0 +1,15 @@
+{
+  "name": "minecraft-bot",
+  "version": "1.0.0",
+  "description": "A simple Minecraft bot",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.9",
+    "googleapis": "^105.0.0",
+    "mineflayer": "^4.26.0"
+  }
+}

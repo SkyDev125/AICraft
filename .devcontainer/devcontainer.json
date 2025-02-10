@@ -1,0 +1,18 @@
+// See https://containers.dev/implementors/json_reference/ for configuration reference
+{
+	"name": "Untitled Node.js project",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"remoteUser": "node",
+	"workspaceMount": "source=/mnt/d/projects,target=/workspace,type=bind",
+	// Open only the submodule folder in the workspace
+	"workspaceFolder": "/workspace/other/AICraft",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"GitHub.copilot"
+			]
+		}
+	}
+}
