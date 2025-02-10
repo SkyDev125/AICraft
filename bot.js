@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const mineflayer = require('mineflayer');
 const fs = require('fs');
+const commands = require('./commands');
 
 let bot;
 
@@ -11,8 +12,10 @@ const credentials = JSON.parse(fs.readFileSync('credentials.json'));
 const genAI = new GoogleGenerativeAI(credentials.api_key);
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.0-flash-thinking-exp',
-  systemInstruction: "You are a Minecraft player. Act like a real player and keep your messages short and to the point. If you don't know something, look it up. Remember, Minecraft chat messages are limited to 256 characters."
+  systemInstruction: `You are a Minecraft player. Act like a real player and keep your messages short and to the point. If you don't know something, look it up. Remember, Minecraft chat messages are limited to 256 characters.\n\nAvailable commands:\n${Object.keys(commands).map(cmd => `!${cmd} ${commands[cmd].args.map(arg => `<${arg.name}>`).join(' ')} - ${commands[cmd].description}`).join('\n')}`
 });
+
+console.log(model.systemInstruction);
 
 let chatSession;
 
@@ -60,28 +63,27 @@ async function createBot() {
 
   bot.on('spawn', async () => {
     console.log('Bot has spawned');
-    await actLikePlayer();
   });
 
   bot.on('chat', async (username, message) => {
     console.log(`${username}: ${message}`);
-    if (username !== bot.username) {
-      if (message.startsWith('!rename ')) {
-        const newName = message.split(' ')[1];
-        await changeBotName(newName);
-        bot.chat(`My new name is ${newName}`);
-      } else {
-        const response = await getGeminiResponse(message);
-        console.log(`Gemini: ${response}`);
-        bot.chat(response);
+    if (username === bot.username) {
+      return;
+    }
+
+    const response = await getGeminiResponse(message);
+
+    if (response.startsWith('!')) {
+      const args = response.slice(1).split(' ');
+      const command = args.shift();
+      if (commands[command]) {
+        commands[command].execute(bot, args);
       }
     }
-  });
-}
 
-async function changeBotName(newName) {
-  bot.username = newName;
-  console.log(`Bot name changed to: ${newName}`);
+    console.log(`${name}: ${response}`);
+    bot.chat(response);
+  });
 }
 
 createBot();
