@@ -4,6 +4,7 @@ const fs = require('fs');
 const commands = require('./commands');
 
 let bot;
+let connected = false;
 
 // Load Google API credentials
 const credentials = JSON.parse(fs.readFileSync('credentials.json'));
@@ -24,7 +25,13 @@ async function startChatSession() {
 }
 
 async function getGeminiResponse(message) {
-  const result = await chatSession.sendMessage(message);
+  let prompt = `${message}`;
+  if (connected) {
+    const { x, y, z } = bot.entity.position;
+    const positionMessage = `Current position: (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`;
+    prompt += `\n${positionMessage}`;
+  }
+  const result = await chatSession.sendMessage(prompt);
   return result.response.text();
 }
 
@@ -43,6 +50,7 @@ async function createBot() {
 
   bot.on('login', async () => {
     console.log('Bot has logged in');
+    connected = true;
   });
 
   bot.on('error', (err) => {
@@ -51,10 +59,12 @@ async function createBot() {
 
   bot.on('end', () => {
     console.log('Bot has disconnected');
+    connected = false;
   });
 
   bot.on('kicked', (reason) => {
     console.log('Bot was kicked:', reason);
+    connected = false;
   });
 
   bot.on('death', () => {

@@ -1,4 +1,5 @@
 const EventEmitter = require('events');
+const Vec3 = require('vec3');
 const runningCommands = new Set();
 const commandEmitter = new EventEmitter();
 
@@ -54,6 +55,56 @@ const commands = {
                         commandEmitter.once('empty', resolve);
                     }
                 });
+            }
+        }
+    },
+    place: {
+        description: 'Places a block at the specified coordinates.',
+        args: [{ name: 'x', type: 'number' }, { name: 'y', type: 'number' }, { name: 'z', type: 'number' }, { name: 'block', type: 'string' }],
+        execute: async (bot, args) => {
+            if (bot && args.length === 4) {
+                const [x, y, z, blockName] = args;
+                const block = bot.registry.blocksByName[blockName];
+                if (block) {
+                    const position = new Vec3(parseFloat(x), parseFloat(y), parseFloat(z));
+                    const referenceBlock = bot.blockAt(position);
+                    const faceVectorTop = new Vec3(0, 1, 0);
+                    const item = bot.inventory.items().find(item => item.name === blockName);
+                    if (item) {
+                        await bot.equip(item, 'hand');
+                        try {
+                            await bot.placeBlock(referenceBlock, faceVectorTop);
+                        }
+                        catch (error) { }
+                    } else {
+                        console.log(`Bot is not holding ${blockName}`);
+                    }
+                } else {
+                    console.log(`Block ${blockName} not found`);
+                }
+            }
+        }
+    },
+    break: {
+        description: 'Breaks a block at the specified coordinates.',
+        args: [{ name: 'x', type: 'number' }, { name: 'y', type: 'number' }, { name: 'z', type: 'number' }],
+        execute: async (bot, args) => {
+            if (bot && args.length === 3) {
+                const [x, y, z] = args;
+                const position = new Vec3(parseFloat(x), parseFloat(y), parseFloat(z));
+                const targetBlock = bot.blockAt(position);
+                if (targetBlock) {
+                    runningCommands.add('break');
+                    try {
+                        await bot.dig(targetBlock);
+                    } catch (error) { }
+                    runningCommands.delete('break');
+                    if (runningCommands.size === 0) {
+                        commandEmitter.emit('empty');
+                    }
+                } else {
+                    console.log(`No block found at (${x}, ${y}, ${z})`);
+                }
             }
         }
     }
