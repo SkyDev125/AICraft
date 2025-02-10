@@ -11,6 +11,7 @@
     "axios": "^1.7.9",
     "googleapis": "^105.0.0",
     "mineflayer": "^4.26.0",
+    "mineflayer-pathfinder": "^2.4.5",
     "vec3": "^0.1.10"
   }
 }

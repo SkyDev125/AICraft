@@ -3,6 +3,7 @@ const Vec3 = require('vec3');
 const runningCommands = new Set();
 const commandEmitter = new EventEmitter();
 const Item = require('prismarine-item')('1.21.4')
+const { pathfinder, Movements, goals: { GoalNear } } = require('mineflayer-pathfinder')
 
 const commands = {
     jump: {
@@ -23,23 +24,22 @@ const commands = {
         }
     },
     move: {
-        description: 'Makes the bot move forward for a specified distance in blocks.',
-        args: [{ name: 'distance', type: 'number' }],
+        description: 'Makes the bot move to specified coordinates (x, y, z).',
+        args: [{ name: 'x', type: 'number' }, { name: 'y', type: 'number' }, { name: 'z', type: 'number' }],
         execute: (bot, args) => {
-            if (bot && args.length > 0) {
-                const distance = parseFloat(args[0]);
-                const speed = 4.317; // blocks per second (default walking speed)
-                if (!isNaN(distance)) {
+            if (bot && args.length === 3) {
+                const [x, y, z] = args.map(parseFloat);
+                if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
                     runningCommands.add('move');
-                    const duration = (distance / speed) * 1000; // convert to milliseconds
-                    bot.setControlState('forward', true);
-                    setTimeout(() => {
-                        bot.setControlState('forward', false);
+                    const defaultMove = new Movements(bot);
+                    bot.pathfinder.setMovements(defaultMove);
+                    bot.pathfinder.setGoal(new GoalNear(x, y, z, 1));
+                    bot.once('goal_reached', () => {
                         runningCommands.delete('move');
                         if (runningCommands.size === 0) {
                             commandEmitter.emit('empty');
                         }
-                    }, duration);
+                    });
                 }
             }
         }
@@ -65,15 +65,15 @@ const commands = {
         execute: async (bot, args) => {
             if (bot && args.length === 4) {
                 const [x, y, z, blockName] = args;
-                const block = bot.registry.blocksByName[blockName];
+                const block = bot.registry.itemsByName[blockName];
                 if (block) {
                     const position = new Vec3(parseFloat(x), parseFloat(y), parseFloat(z));
                     const referenceBlock = bot.blockAt(position);
                     const faceVectorTop = new Vec3(0, 1, 0);
                     const item = new Item(block.id, 1);
                     await bot.creative.setInventorySlot(36, item);
-                    await bot.placeBlock(referenceBlock, faceVectorTop).catch((error) => {
-                        console.log(`Failed to place block: ${error.message}`);
+                    await bot.placeBlock(referenceBlock, faceVectorTop, { timeout: 100 }).catch((error) => {
+                        console.log(`Error placing block: ${error.message}`);
                     });
                 } else {
                     console.log(`Block ${blockName} not found`);
