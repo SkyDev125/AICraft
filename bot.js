@@ -15,13 +15,20 @@ const credentials = JSON.parse(fs.readFileSync('credentials.json'));
 const genAI = new GoogleGenerativeAI(credentials.api_key);
 const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-thinking-exp' });
 
+let chatSession;
+
+async function startChatSession() {
+  chatSession = await model.startChat();
+}
+
 async function getGeminiResponse(message) {
-  const result = await model.generateContent(message);
+  const result = await chatSession.sendMessage(message);
   return result.response.text();
 }
 
-bot.on('login', () => {
+bot.on('login', async () => {
   console.log('Bot has logged in');
+  await startChatSession();
 });
 
 bot.on('error', (err) => {
