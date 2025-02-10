@@ -2,6 +2,7 @@ const EventEmitter = require('events');
 const Vec3 = require('vec3');
 const runningCommands = new Set();
 const commandEmitter = new EventEmitter();
+const Item = require('prismarine-item')('1.21.4')
 
 const commands = {
     jump: {
@@ -69,16 +70,11 @@ const commands = {
                     const position = new Vec3(parseFloat(x), parseFloat(y), parseFloat(z));
                     const referenceBlock = bot.blockAt(position);
                     const faceVectorTop = new Vec3(0, 1, 0);
-                    const item = bot.inventory.items().find(item => item.name === blockName);
-                    if (item) {
-                        await bot.equip(item, 'hand');
-                        try {
-                            await bot.placeBlock(referenceBlock, faceVectorTop);
-                        }
-                        catch (error) { }
-                    } else {
-                        console.log(`Bot is not holding ${blockName}`);
-                    }
+                    const item = new Item(block.id, 1);
+                    await bot.creative.setInventorySlot(36, item);
+                    await bot.placeBlock(referenceBlock, faceVectorTop).catch((error) => {
+                        console.log(`Failed to place block: ${error.message}`);
+                    });
                 } else {
                     console.log(`Block ${blockName} not found`);
                 }
