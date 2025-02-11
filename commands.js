@@ -60,7 +60,7 @@ const commands = {
                 const [x, y, z, blockName] = args;
                 const block = bot.registry.itemsByName[blockName];
                 if (block) {
-                    const position = new Vec3(parseFloat(x), parseFloat(y), parseFloat(z));
+                    const position = new Vec3(parseInt(x), parseInt(y), parseInt(z));
                     const referenceBlock = bot.blockAt(position);
                     const faceVectorTop = new Vec3(0, 1, 0);
                     const item = new Item(block.id, 1);
@@ -80,7 +80,7 @@ const commands = {
         execute: async (bot, args) => {
             if (bot && args.length === 3) {
                 const [x, y, z] = args;
-                const position = new Vec3(parseFloat(x), parseFloat(y), parseFloat(z));
+                const position = new Vec3(parseInt(x), parseInt(y), parseInt(z));
                 const targetBlock = bot.blockAt(position);
                 if (targetBlock) {
                     await bot.dig(targetBlock).catch((error) => {

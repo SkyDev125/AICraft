@@ -110,7 +110,7 @@ async function getGeminiResponse(message) {
   let prompt = `${message}`;
   if (connected) {
     const { x, y, z } = bot.entity.position;
-    const positionMessage = `Current position: (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`;
+    const positionMessage = `Current position: (${Math.floor(x)}, ${Math.floor(y)}, ${Math.floor(z)})`;
     prompt += `\n${positionMessage}`;
     const gameModeMessage = `Game mode: ${bot.game.gameMode}`;
     prompt += `\n${gameModeMessage}`;
