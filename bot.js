@@ -41,7 +41,7 @@ You are a Minecraft AI agent. Respond ONLY using a strict JSON format with exact
 ${availableCommandsText}
 
 3. **Gameplay & Safety Rules**  
-   • Ensure block placement and breaking is safe: stay within 5 blocks but no closer than 1 block to any target.
+   • Ensure block placement and breaking is safe: stay within 6 blocks but no closer than 2 block to any target.
    • Keep conversation messages concise, realistic, and helpful.
    • If uncertain or if an error occurs, explain briefly in "conversation" and output an empty "commands" array.
    • If parameters might lead to unsafe actions, output a "wait" command instead.
@@ -67,12 +67,43 @@ Follow these rules exactly. Do not include any extra keys or formatting. Think c
 `
 });
 
-console.log(model.systemInstruction);
-
 let chatSession;
 
 async function startChatSession() {
   chatSession = await model.startChat();
+}
+
+function getCartesianDirection(yaw) {
+  if (yaw >= -Math.PI / 4 && yaw < Math.PI / 4) {
+    return '-z'; // Facing positive Z direction
+  } else if (yaw >= Math.PI / 4 && yaw < 3 * Math.PI / 4) {
+    return '-x'; // Facing negative X direction
+  } else if (yaw >= -3 * Math.PI / 4 && yaw < -Math.PI / 4) {
+    return '+x'; // Facing positive X direction
+  } else {
+    return '+z'; // Facing negative Z direction
+  }
+}
+
+function normalizeYaw(yaw) {
+  if (yaw > Math.PI) {
+    yaw -= 2 * Math.PI;
+  } else if (yaw <= -Math.PI) {
+    yaw += 2 * Math.PI;
+  } else {
+    yaw = yaw;
+  }
+  return yaw;
+}
+
+function getLeftDirection(yaw) {
+  console.log(normalizeYaw(yaw + Math.PI / 2));
+  return getCartesianDirection(normalizeYaw(yaw + Math.PI / 2));
+}
+
+function getRightDirection(yaw) {
+  console.log(normalizeYaw(yaw - Math.PI / 2));
+  return getCartesianDirection(normalizeYaw(yaw - Math.PI / 2));
 }
 
 async function getGeminiResponse(message) {
@@ -81,7 +112,23 @@ async function getGeminiResponse(message) {
     const { x, y, z } = bot.entity.position;
     const positionMessage = `Current position: (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`;
     prompt += `\n${positionMessage}`;
+    const inventoryMessage = `Inventory: ${bot.inventory.items().map(item => `${item.name} x${item.count}`).join(', ')}`;
+    prompt += `\n${inventoryMessage}`;
+    const healthMessage = `Health: ${bot.health}`;
+    prompt += `\n${healthMessage}`;
+    const foodMessage = `Food: ${bot.food}`;
+    prompt += `\n${foodMessage}`;
+    const directionMessage = `Facing Direction: ${getCartesianDirection(bot.entity.yaw)}`;
+    prompt += `\n${directionMessage}`;
+    const leftDirectionMessage = `Left Direction: ${getLeftDirection(bot.entity.yaw)}`;
+    prompt += `\n${leftDirectionMessage}`;
+    const rightDirectionMessage = `Right Direction: ${getRightDirection(bot.entity.yaw)}`;
+    prompt += `\n${rightDirectionMessage}`;
   }
+
+  console.log(`Prompt: ${prompt}`);
+  console.log('yaw:', bot.entity.yaw);
+
   let attempts = 0;
   let waitTime = initialRetryTime;
   while (attempts < maxRetries) {
@@ -111,7 +158,6 @@ async function createBot() {
     username: "Jim",  // Minecraft bot username
     version: '1.21.4'
   });
-  console.log(`Bot version: ${bot.version}`);
 
   bot.loadPlugin(pathfinder);
 

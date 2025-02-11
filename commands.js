@@ -11,15 +11,8 @@ const commands = {
         args: [],
         execute: (bot) => {
             if (bot) {
-                runningCommands.add('jump');
                 bot.setControlState('jump', true);
-                setTimeout(() => {
-                    bot.setControlState('jump', false);
-                    runningCommands.delete('jump');
-                    if (runningCommands.size === 0) {
-                        commandEmitter.emit('empty');
-                    }
-                }, 100); // Single jump
+                bot.setControlState('jump', false);
             }
         }
     },
@@ -33,7 +26,7 @@ const commands = {
                     runningCommands.add('move');
                     const defaultMove = new Movements(bot);
                     bot.pathfinder.setMovements(defaultMove);
-                    bot.pathfinder.setGoal(new GoalNear(x, y, z, 1));
+                    bot.pathfinder.setGoal(new GoalNear(x, y, z, 2));
                     bot.once('goal_reached', () => {
                         runningCommands.delete('move');
                         if (runningCommands.size === 0) {
@@ -72,7 +65,7 @@ const commands = {
                     const faceVectorTop = new Vec3(0, 1, 0);
                     const item = new Item(block.id, 1);
                     await bot.creative.setInventorySlot(36, item);
-                    await bot.placeBlock(referenceBlock, faceVectorTop, { timeout: 100 }).catch((error) => {
+                    await bot.placeBlock(referenceBlock, faceVectorTop).catch((error) => {
                         console.log(`Error placing block: ${error.message}`);
                     });
                 } else {
@@ -90,14 +83,9 @@ const commands = {
                 const position = new Vec3(parseFloat(x), parseFloat(y), parseFloat(z));
                 const targetBlock = bot.blockAt(position);
                 if (targetBlock) {
-                    runningCommands.add('break');
-                    try {
-                        await bot.dig(targetBlock);
-                    } catch (error) { }
-                    runningCommands.delete('break');
-                    if (runningCommands.size === 0) {
-                        commandEmitter.emit('empty');
-                    }
+                    await bot.dig(targetBlock).catch((error) => {
+                        console.log(`Error breaking block: ${error.message}`);
+                    });
                 } else {
                     console.log(`No block found at (${x}, ${y}, ${z})`);
                 }
@@ -135,7 +123,6 @@ const commands = {
                     const defaultMove = new Movements(bot);
                     bot.pathfinder.setMovements(defaultMove);
                     const followPlayer = () => {
-                        player = bot.players[playerName];
                         if (player && player.entity && runningCommands.has('follow')) {
                             bot.pathfinder.setGoal(new GoalNear(player.entity.position.x, player.entity.position.y, player.entity.position.z, 3));
                             setTimeout(followPlayer, 1000); // Update location every second
