@@ -112,6 +112,8 @@ async function getGeminiResponse(message) {
     const { x, y, z } = bot.entity.position;
     const positionMessage = `Current position: (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`;
     prompt += `\n${positionMessage}`;
+    const gameModeMessage = `Game mode: ${bot.game.gameMode}`;
+    prompt += `\n${gameModeMessage}`;
     const inventoryMessage = `Inventory: ${bot.inventory.items().map(item => `${item.name} x${item.count}`).join(', ')}`;
     prompt += `\n${inventoryMessage}`;
     const healthMessage = `Health: ${bot.health}`;
