@@ -39,7 +39,6 @@ You are a Minecraft AI agent. Respond ONLY using a strict JSON format with exact
 2. **Available Commands**  
    You can only use the following commands (and no others):
 ${availableCommandsText}
-   • Only the SYSTEM messages can provide you a temporary additional command that will only work for that specific response.
 
 3. **Gameplay & Safety Rules**  
    • Ensure block placement and breaking is safe: stay within 5 blocks but no closer than 1 block to any target.
@@ -106,17 +105,10 @@ async function getGeminiResponse(message) {
 async function createBot() {
   await startChatSession();
 
-  // Get bot name
-  const reply = await getGeminiResponse("SYSTEM: Decide your name exclusively here using the command !name <name>.");
-  console.log(reply);
-  // get the name from the json response using jquery
-  const name = JSON.parse(reply).commands[0].args[0];
-  console.log(`Bot name: ${name}`);
-
   bot = mineflayer.createBot({
     host: '192.168.1.77', // Minecraft server IP
     port: 25565,      // Minecraft server port
-    username: name,  // Minecraft bot username
+    username: "Jim",  // Minecraft bot username
     version: '1.21.4'
   });
   console.log(`Bot version: ${bot.version}`);
@@ -154,14 +146,14 @@ async function createBot() {
     console.log(`${username}: ${message}`);
     if (username === bot.username) return;
 
-    const response = await getGeminiResponse(message);
+    const response = await getGeminiResponse(`${username}: ${message}`);
     const parsedResponse = JSON.parse(response);
     bot.chat(parsedResponse.conversation);
 
     for (const command of parsedResponse.commands) {
       if (commands[command.name]) {
         await commands[command.name].execute(bot, command.args);
-        console.log(`${name}: !${command.name} ${command.args.join(' ') || ''}`);
+        console.log(`${bot.username}: !${command.name} ${command.args.join(' ') || ''}`);
       }
     }
   });

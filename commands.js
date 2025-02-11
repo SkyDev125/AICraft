@@ -60,7 +60,7 @@ const commands = {
         }
     },
     place: {
-        description: 'Places a block at the specified coordinates.',
+        description: 'Places a block, placeable or usable items at the specified coordinates.',
         args: [{ name: 'x', type: 'number' }, { name: 'y', type: 'number' }, { name: 'z', type: 'number' }, { name: 'block', type: 'string' }],
         execute: async (bot, args) => {
             if (bot && args.length === 4) {
@@ -101,6 +101,61 @@ const commands = {
                 } else {
                     console.log(`No block found at (${x}, ${y}, ${z})`);
                 }
+            }
+        }
+    },
+    drop: {
+        description: 'Drops an item from the bot\'s inventory.',
+        args: [{ name: 'item', type: 'string' }, { name: 'quantity', type: 'number' }],
+        execute: async (bot, args) => {
+            if (bot && args.length === 2) {
+                const [itemName, quantity] = args;
+                const item = bot.inventory.items().find(i => i.name === itemName);
+                if (item) {
+                    try {
+                        await bot.toss(item.type, null, quantity);
+                    } catch (error) {
+                        console.log(`Error dropping item: ${error.message}`);
+                    }
+                } else {
+                    console.log(`Item ${itemName} not found in inventory`);
+                }
+            }
+        }
+    },
+    follow: {
+        description: 'Follows a player with the specified name.',
+        args: [{ name: 'playerName', type: 'string' }],
+        execute: (bot, args) => {
+            if (bot && args.length === 1) {
+                const [playerName] = args;
+                let player = bot.players[playerName];
+                if (player && player.entity) {
+                    runningCommands.add('follow');
+                    const defaultMove = new Movements(bot);
+                    bot.pathfinder.setMovements(defaultMove);
+                    const followPlayer = () => {
+                        player = bot.players[playerName];
+                        if (player && player.entity && runningCommands.has('follow')) {
+                            bot.pathfinder.setGoal(new GoalNear(player.entity.position.x, player.entity.position.y, player.entity.position.z, 3));
+                            setTimeout(followPlayer, 1000); // Update location every second
+                        }
+                    };
+                    followPlayer();
+                } else {
+                    console.log(`Player ${playerName} not found`);
+                }
+            }
+        }
+    },
+    unfollow: {
+        description: 'Stops following the current player.',
+        args: [],
+        execute: (bot) => {
+            if (bot) {
+                runningCommands.delete('follow');
+                bot.pathfinder.setGoal(null);
+                console.log('Stopped following the player.');
             }
         }
     }
